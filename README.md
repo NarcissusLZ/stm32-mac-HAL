@@ -19,7 +19,7 @@ CLT的包，如果没有更改安装位置的话，在根目录的opt文件夹�
 
 完成之后，clion目前也已经添加了stlink和jlink的支持，可以直接使用。如果使用的是daplink，目前还是需要通过openocd，可以看看我另一个仓库，关于标准库下mac开发stm32.
 
-之后自己添加文件的时候，还是注意cmake文件的更改：
+之后自己添加文件的时候，还是注意cmake文件的更改，cubeMX生成的cmake默认是添加了本身的HAL库文件，但是之后自己创建的文件，还是需要通过文件名的形式在下面的cmake中添加：
 ```cmake
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -29,16 +29,21 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    Core/Src/retarget.c
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    Core/Inc/retarget.h
 )
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
+    DEBUG
+    STM32F103xE
+    USE_HAL_DRIVER
 )
 
 # Add linked libraries
@@ -50,7 +55,14 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 ```
 cmake文件中的注释已经表明了需要更改的地方，比起之前的文件，确实方便不少。
 
+考虑到大部分的人日常可能会通过串口调试，所以额外添加了几个文件，注意**Core**下的**retarget**，用于重定向串口，同时为了方便浮点输出，cmake中应添加下列语句：
+
+```cmake
+# 启用 printf 的浮点数支持
+target_link_options(${PROJECT_NAME} PRIVATE -Wl,-u,_printf_float)
+
 **最后需要注意的地方：**目前默认没有生成hex或者bin文件，所以建议手动在cmake文件中，添加最后这两句，用于生成对应的文件：
+
 
 ```cmake
 # Convert output to hex and binary
